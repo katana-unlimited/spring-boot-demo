@@ -1,0 +1,4 @@
+.DS_Store
+docker/mysql/log
+.history
+docker/mysql/data

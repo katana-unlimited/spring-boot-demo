@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>ユーザページ</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" />
+    <link rel="stylesheet" href="../static/css/style.css" th:href="@{/css/style.css}">
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+</head>
+<body>
+    <h1>ユーザページ</h1>
+    <a href="index.html" th:href="@{/}">トップページへ</a>
+    <form method="post" action="index.html" th:action="@{/logout}">
+        <button type="submit">ログアウト</button>
+    </form>
+    <form th:action="@{/user/update}" th:object="${userUpdateForm}" th:method="post">
+    <div class="container">
+        <h1>ユーザー情報編集</h1>
+        <table>
+            <tbody>
+                <tr>
+                    <td>名前</td>
+                    <td>
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="山田 花子" th:field="*{name}"
+                            th:classappend="${#fields.hasErrors('name')}?'is-invalid'"/>
+                            <span class="text-danger"
+                                th:if="${#fields.hasErrors('name')}"
+                                th:errors="*{name}">
+                                name error
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>性別</td>
+                    <td>
+                        <div class="form-group">
+                            <div th:each="radioButton : *{genderStatusList}">
+                                <label th:for="${#ids.next('gender')}" class="form-check-label" th:text="${radioButton.viewName}"></label>
+                                <input type="radio" class="form-check-input" th:field="*{gender}" th:value="${radioButton.name()}"
+                                        th:classappend="${#fields.hasErrors('gender')}?'is-invalid'"/>
+                            </div>
+                            <span class="text-danger"
+                                th:if="${#fields.hasErrors('gender')}"
+                                th:errors="*{gender}">
+                                gender error
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>メールアドレス</td>
+                    <td><p th:text="*{email}"></p><input type="hidden" th:field="*{email}" /></td>
+                </tr>
+                <tr th:unless="${#authorization.url('/admin')}">
+                    <td>現在のパスワード</td>
+                    <td>
+                        <div class="form-group">
+                            <input type="password" class="form-control" placeholder="" th:field="*{password}"
+                            th:classappend="${#fields.hasErrors('password')}?'is-invalid'"/>
+                            <span class="text-danger"
+                                th:if="${#fields.hasErrors('password')}"
+                                th:errors="*{password}">
+                                password error
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>新パスワード</td>
+                    <td>
+                        <div class="form-group">
+                            <input type="password" class="form-control" placeholder="変更が必要な時だけ入力" th:field="*{newPassword}"
+                            th:classappend="${#fields.hasErrors('newPassword')}?'is-invalid'"/>
+                            <span class="text-danger"
+                                th:if="${#fields.hasErrors('newPassword')}"
+                                th:errors="*{newPassword}">
+                                newPassword error
+                            </span>
+                            <span class="text-danger"
+                                th:if="${#fields.hasErrors('newPasswordValid')}"
+                                th:errors="*{newPasswordValid}">
+                                password error
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>新パスワード（確認用）</td>
+                    <td>
+                        <input type="password" class="form-control" placeholder="変更が必要な時だけ入力" th:field="*{passwordConfirmation}"
+                        th:classappend="${#fields.hasErrors('passwordConfirmation')}?'is-invalid'"/>
+                        <span class="text-danger"
+                            th:if="${#fields.hasErrors('passwordConfirmation')}"
+                            th:errors="*{passwordConfirmation}">
+                            passwordConfirmation error
+                        </span>
+                </td>
+                </tr>
+                <tr>
+                    <td>興味のあるジャンル</td>
+                    <td>
+                        <div class="form-group">
+                            <div class="checkbox" th:each="item : ${genreItems}">
+                                <label>
+                                <input type="checkbox" th:value="${item.value}" th:text="${item.key}" th:field="*{genre}"></input>
+                                </label>
+                            </div>
+                            <span th:if="${#fields.hasErrors('genre')}" th:errors="*{genre}" class="help-block">error!</span>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <br />
+        <div class="text-center">
+          <input type="submit" value="　保存　"  class="btn btn-primary">
+          <a th:href="@{/user/{id}(id=*{email})}" class="btn btn-secondary">　キャンセル　</a>
+        </div>
+    </div>
+    </form>
+</body>
+</html>

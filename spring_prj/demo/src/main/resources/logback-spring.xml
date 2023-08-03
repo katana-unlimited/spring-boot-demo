@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE logback>
+<configuration>
+
+    <property name="logFileName" value="app" />
+
+    <!--開発環境用設定 -->
+    <springProfile name="dev">
+        <property name="logFilePath" value="/var/log/dev/" />
+        <property name="logLevel" value="DEBUG" />
+    </springProfile>
+
+    <!--uat環境用設定 -->
+    <springProfile name="uat">
+        <property name="logFilePath" value="/var/log/uat/" />
+　　    <property name="logLevel" value="INFO" />
+    </springProfile>
+
+    <!--production環境用設定 -->
+    <springProfile name="production">
+        <property name="logFilePath" value="/var/log/production/" />
+　　    <property name="logLevel" value="INFO" />
+    </springProfile>
+
+    <!-- コンソール出力 -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.out</target>
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>%d{yyyy/MM/dd HH:mm:ss} %-5level [%thread] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- アプリケーションログのファイル書き出し -->
+    <appender name="APPLIATION_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--ファイル名設定 -->
+        <file>${logFilePath}${logFileName}.log</file>
+        <!--ログファイルのローテーション設定 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${logFilePath}${logFileName}-%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+            <maxHistory>3</maxHistory>
+        </rollingPolicy>
+        <!--ログ出力フォーマット設定 -->
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>%d{yyyy/MM/dd HH:mm:ss} %-5level [%thread] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ロガー -->
+    <logger name="appLogger" level="INFO">
+        <appender-ref ref="APPLIATION_LOG" />
+    </logger>
+
+    <!-- ロガー -->
+    <logger name="com.example.demo" level="${logLevel}">
+        <appender-ref ref="APPLIATION_LOG" />
+    </logger>
+
+    <!-- ルート -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>

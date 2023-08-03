@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>ユーザページ</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" />
+    <link rel="stylesheet" href="../static/css/style.css" th:href="@{/css/style.css}">
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+</head>
+<body>
+    <h1>ユーザページ</h1>
+    <a href="index.html" th:href="@{/}">トップページへ</a>
+    <a href="general.html" th:href="@{/general}" sec:authorize-url="/general"><br/>一般ユーザーページへ</a>
+    <a href="admin.html" th:href="@{/admin}" sec:authorize-url="/admin"><br/>管理者ページへ</a>
+    <form method="post" action="index.html" th:action="@{/logout}">
+        <button type="submit">ログアウト</button>
+    </form>
+    <div class="container" th:object="${userForm}">
+        <h1>ユーザー情報詳細</h1>
+        <table>
+            <tbody>
+                <tr>
+                    <td>名前</td>
+                    <td><p th:text="*{name}"></p></td>
+                </tr>
+                <tr>
+                    <td>性別</td>
+                    <td><p th:text="*{gender.viewName}"></p></td>
+                </tr>
+                <tr>
+                    <td>メールアドレス</td>
+                    <td><p th:text="*{email}"></p></td>
+                </tr>
+                <tr>
+                    <td>興味のあるジャンル</td>
+                    <td>
+                        <div th:each="item : ${genreItems}">
+                            <!-- <div th:if="${#strings.contains(#strings.arrayJoin(userForm.genre,','), item.value)}"> -->
+                            <div th:if="${#lists.contains(userForm.genre, item.value)}">
+                                <span th:text="${item.key}"></span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <br />
+        <div class="text-center">
+          <a th:href="@{/user/{id}/edit(id=*{email})}" class="btn btn-primary">　編集　</a>
+          <a th:href="@{/user/{id}/delete(id=*{email})}" class="btn btn-secondary">　削除　</a>
+        </div>
+    </div>
+</body>
+</html>
