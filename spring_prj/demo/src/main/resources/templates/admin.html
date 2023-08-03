@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>管理者ページ</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" />
+    <link rel="stylesheet" href="../static/css/style.css" th:href="@{/css/style.css}">
+</head>
+<body>
+    <h1>管理者ページ</h1>
+    <p>ようこそ<span sec:authentication="principal.loginUser.name">管理者</span>さん</p>
+    <a href="index.html" th:href="@{/}">トップページへ</a>
+    <form method="post" action="index.html" th:action="@{/logout}">
+        <button type="submit">ログアウト</button>
+    </form>
+    <div class="float-top">
+        <a th:href="@{/user/add}" class="btn btn-primary">新規ユーザ登録はこちら</a>
+    </div>
+    <form th:action="@{/admin}" th:object="${userSearchForm}" th:method="post">
+        <div class="container">
+            <h1>ユーザー検索条件</h1>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>名前</td>
+                        <td>
+                            <div class="form-group">
+                                <input type="text" class="form-control" placeholder="山田 花子" th:field="*{name}"
+                                th:classappend="${#fields.hasErrors('name')}?'is-invalid'"/>
+                                <span class="text-danger"
+                                    th:if="${#fields.hasErrors('name')}"
+                                    th:errors="*{name}">
+                                    name error
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>メールアドレス</td>
+                        <td>
+                            <div class="form-group">
+                                <input type="text" class="form-control" placeholder="hanako_yamada@gmail.com" th:field="*{email}"
+                                th:classappend="${#fields.hasErrors('email')}?'is-invalid'"/>
+                                <span class="text-danger"
+                                    th:if="${#fields.hasErrors('email')}"
+                                    th:errors="*{email}">
+                                    email error
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>ロール</td>
+                        <td>
+                            <div class="form-group">
+                                <select class="form-control" name="roles" multiple="multiple" size="3">
+                                  <option value="">--指定なし--</option>
+                                  <option th:each="item : ${roleItems}" th:value="${item.value}" th:text="${item.key}" th:field="*{roles}">pulldown</option>
+                                </select>
+                                <span th:if="${#fields.hasErrors('roles')}" th:errors="*{roles}" class="help-block">role error!</span>
+                              </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <br />
+            <div class="text-center">
+              <input type="submit" value="　検索　" class="btn btn-primary">
+            </div>
+        </div>
+        </form>
+     <div th:if="${page != null}">
+     <table>
+        <thead>
+            <tr>
+                <th>ユーザ名
+                    <a th:href="@{/admin(page=0, name=${userSearchForm.name}, email=${userSearchForm.email}, roles=${#strings.arrayJoin(userSearchForm.roles, ',')}, sortBy='+name')}" class="page-link">▲</a>
+                    <a th:href="@{/admin(page=0, name=${userSearchForm.name}, email=${userSearchForm.email}, roles=${#strings.arrayJoin(userSearchForm.roles, ',')}, sortBy='-name')}" class="page-link">▼</a>
+                </th>
+                <th>メールアドレス
+                    <a th:href="@{/admin(page=0, name=${userSearchForm.name}, email=${userSearchForm.email}, roles=${#strings.arrayJoin(userSearchForm.roles, ',')}, sortBy='+email')}" class="page-link">▲</a>
+                    <a th:href="@{/admin(page=0, name=${userSearchForm.name}, email=${userSearchForm.email}, roles=${#strings.arrayJoin(userSearchForm.roles, ',')}, sortBy='-email')}" class="page-link">▼</a>
+                </th>
+                <th>ロール
+                </th>
+                <th>登録日時</th>
+                <th>登録ユーザ</th>
+                <th>更新日時</th>
+                <th>更新ユーザ</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="account : ${accounts}">
+                <td th:text="${account.name}">
+                </td>
+                <td th:text="${account.email}">
+                </td>
+                <td>
+                    <th:block th:each="role : ${account.roleList}">
+                        <th:block th:each="item : ${roleItems}">
+                            <th:block th:if="${role.name == item.value}">
+                                <div th:text="${item.key}"></div>
+                            </th:block>
+                        </th:block>
+                    </th:block>
+                </td>
+                <!-- <td th:text="${#temporals.format(account.createdAt}, 'yyyy/MM/dd HH:mm:ss')}"> -->
+                <td th:text="${#temporals.format(account.createdAt, 'yyyy/MM/dd HH:mm:ss')} + |（${#temporals.dayOfWeekName(account.createdAt)}）|">
+                    2000/01/01（水）
+                </td>
+                <td th:text="${account.createdBy}">
+                </td>
+                <td th:text="${#temporals.format(account.updatedAt, 'yyyy/MM/dd HH:mm:ss')} + |（${#temporals.dayOfWeekName(account.updatedAt)}）|">
+                    2000/01/01（水）
+                </td>
+                <td th:text="${account.updatedBy}">
+                </td>
+                <td><a th:href="@{/user/{id}(id=${account.email})}" class="btn btn-secondary">詳細</a></td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <!-- 以降がページネーション部分 -->
+    <!--/* ページネーションバー（全部表示） */-->
+    <nav aria-label="Page navigation1">
+        <ul class="pagination">
+            <th:block th:each="i : ${ #numbers.sequence(0, page.totalPages - 1) }">
+                <li th:if="${i ge 0}" class="page-item" th:classappend="${i eq page.number} ? 'active'">
+                    <a th:href="@{/admin(page=${i}, name=${userSearchForm.name}, email=${userSearchForm.email}, roles=${#strings.arrayJoin(userSearchForm.roles, ',')}, sortBy=${userSearchForm.sortBy})}" th:text="${i + 1}" class="page-link"></a>
+                </li>
+            </th:block>
+        </ul>
+    </nav>
+    
+    <!--/* ページネーションバー（Redmine参考） */-->
+    <nav aria-label="Page navigation2">
+        <ul class="pagination">
+            <!--/* 前のページ */-->
+            <li class="page-item" th:classappend="${page.first} ? 'disabled'">
+                <a th:href="@{/admin(page=${page.number - 1}, name=${userSearchForm.name}, email=${userSearchForm.email}, roles=${#strings.arrayJoin(userSearchForm.roles, ',')}, sortBy=${userSearchForm.sortBy})}" class="page-link" th:tabindex="${page.first} ? -1"
+                    aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                    <span class="sr-only">Previous</span>
+                </a>
+            </li>
+    
+            <!--/* 最初のページ */-->
+            <li th:if="${page.number gt 2}" class="page-item">
+                <a th:href="@{/admin(page=0, name=${userSearchForm.name}, email=${userSearchForm.email}, roles=${#strings.arrayJoin(userSearchForm.roles, ',')}, sortBy=${userSearchForm.sortBy})}" class="page-link">1</a>
+            </li>
+    
+            <!--/* … */-->
+            <li th:if="${page.number gt 3}" class="page-item disabled">
+                <a href="#" class="page-link">…</a>
+            </li>
+    
+            <th:block th:each="i : ${ #numbers.sequence(page.number - 2, page.number + 2) }">
+                <li th:if="${i ge 0 and i lt page.totalPages}" class="page-item"
+                    th:classappend="${i eq page.number} ? 'active'">
+                    <a th:href="@{/admin(page=${i}, name=${userSearchForm.name}, email=${userSearchForm.email}, roles=${#strings.arrayJoin(userSearchForm.roles, ',')}, sortBy=${userSearchForm.sortBy})}" th:text="${i + 1}" class="page-link"></a>
+                </li>
+            </th:block>
+    
+            <!--/* … */-->
+            <li th:if="${page.totalPages gt (page.number + 4)}" class="page-item disabled">
+                <a href="#" class="page-link">…</a>
+            </li>
+    
+            <!--/* 最後のページ */-->
+            <li th:if="${page.totalPages gt (page.number + 3)}" class="page-item">
+                <a th:href="@{/admin(page=${page.totalPages - 1}, name=${userSearchForm.name}, email=${userSearchForm.email}, roles=${#strings.arrayJoin(userSearchForm.roles, ',')}, sortBy=${userSearchForm.sortBy})}" th:text="${page.totalPages}" class="page-link"></a>
+            </li>
+    
+            <!--/* 次のページ */-->
+            <li class="page-item" th:classappend="${page.last} ? 'disabled'">
+                <a th:href="@{/admin(page=${page.number + 1}, name=${userSearchForm.name}, email=${userSearchForm.email}, roles=${#strings.arrayJoin(userSearchForm.roles, ',')}, sortBy=${userSearchForm.sortBy})}" class="page-link" th:tabindex="${page.last} ? -1"
+                    aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                    <span class="sr-only">Next</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    </div>
+</body>
+</html>

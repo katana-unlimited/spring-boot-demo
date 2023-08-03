@@ -1,0 +1,31 @@
+services:
+  java:
+    image: liberica-openjdk-alpine:17
+    # container_name を指定しない場合、コンテナ名は自動的に「COMPOSE_PROJECT_NAME 変数 + _ + サービス名 + _ + 連番」となる。
+    # container_name: java
+    env_file:
+      - ./mysql/db.env
+    tty: true
+    working_dir: /app
+    volumes:
+      - type: bind
+        source: ../spring_prj
+        target: /app
+    ports:
+      - 8080:8080 # 通常実行
+      - 5050:5050 # デバッグ用
+    depends_on:
+      - mysql
+
+  mysql:
+    image: arm64v8/mysql:8.0-oracle
+    #container_name: mysql
+    env_file:
+      - ./mysql/db.env
+    volumes:
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/log:/var/log/mysql
+      - ./mysql/sql_init:/docker-entrypoint-initdb.d
+    ports:
+      - 3306:3306

@@ -1,0 +1,16 @@
+{
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "java.compile.nullAnalysis.mode": "automatic",
+  "cSpell.words": [
+    "classappend",
+    "Entitiy",
+    "JPASQL",
+    "JPQL",
+    "Querydsl",
+    "Redmine",
+    "Servlet",
+    "springframework",
+    "subquery",
+    "webjars"
+  ]
+}
