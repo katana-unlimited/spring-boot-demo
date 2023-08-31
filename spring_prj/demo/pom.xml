@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.1.2</version>
+		<version>3.1.3</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
@@ -150,7 +150,8 @@
 					<jdbcUser>dev_usr</jdbcUser>
 					<jdbcPassword>dev_usr_pass</jdbcPassword>
 					<packageName>com.example.demo</packageName>
-					<targetFolder>${project.basedir}/target/generated-sources/java</targetFolder>
+					<targetFolder>${project.build.directory}/generated-sources/java</targetFolder>
+					<sourceFolder>${project.build.directory}/generated-sources/java</sourceFolder>
 					<namePrefix>S</namePrefix>
 				</configuration>
 				<dependencies>
