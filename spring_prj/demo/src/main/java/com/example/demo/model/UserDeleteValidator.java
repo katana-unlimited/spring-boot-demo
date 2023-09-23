@@ -1,7 +1,6 @@
 package com.example.demo.model;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -32,13 +31,13 @@ public class UserDeleteValidator implements Validator {
         UserDeleteForm form = (UserDeleteForm) target;
         LoginUserDetails userDetails = (LoginUserDetails) SecurityContextHolder.getContext().getAuthentication()
                 .getPrincipal();
-        if (!userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
+        if (!userDetails.isAdmin()) {
             // 入力した現在のパスワードが正しいかチェック（管理者はOK）
             if (StringUtils.hasText(form.getPasswordConfirmation())) {
                 if (!passwordEncoder.matches(form.getPasswordConfirmation(), userDetails.getPassword()))
-                    errors.rejectValue("passwordConfirmation", "password.invalid", "パスワードが正しくありません");
+                    errors.rejectValue("passwordConfirmation", "invalid");
             } else
-                errors.rejectValue("passwordConfirmation", "password.empty", "パスワードを入力してください");
+                errors.rejectValue("passwordConfirmation", "empty");
         }
     }
     

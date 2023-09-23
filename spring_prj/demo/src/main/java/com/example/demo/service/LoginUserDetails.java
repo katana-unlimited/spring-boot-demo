@@ -59,4 +59,8 @@ public class LoginUserDetails implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+
+    public boolean isAdmin() {
+        return authorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+    }
 }

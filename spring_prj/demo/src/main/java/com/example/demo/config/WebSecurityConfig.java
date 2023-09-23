@@ -30,6 +30,7 @@ public class WebSecurityConfig {
                 .requestMatchers("/", "/webjars").permitAll()
                 .requestMatchers("/general").hasRole("GENERAL")
                 .requestMatchers("/admin").hasRole("ADMIN")
+                .requestMatchers("/actuator").hasRole("ADMIN")
                 .anyRequest().authenticated()
         );
         return http.build();

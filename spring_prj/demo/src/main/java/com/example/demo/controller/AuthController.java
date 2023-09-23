@@ -5,9 +5,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -15,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -34,6 +36,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import com.example.demo.dto.LoginUserDTO;
 import com.example.demo.entity.LoginUser;
 import com.example.demo.exception.UserNotFoundException;
 import com.example.demo.model.UserDeleteForm;
@@ -42,6 +45,7 @@ import com.example.demo.model.UserForm;
 import com.example.demo.model.UserSearchForm;
 import com.example.demo.model.UserUpdateForm;
 import com.example.demo.model.UserUpdateValidator;
+import com.example.demo.service.LoginUserDetails;
 import com.example.demo.service.LoginUserDetailsService;
 
 import jakarta.servlet.ServletException;
@@ -56,25 +60,29 @@ public class AuthController {
     private UserUpdateValidator userUpdateValidator;
     @Autowired
     private UserDeleteValidator userDeleteValidator;
+    @Autowired
+    private ModelMapper modelMapper;
+    @Autowired
+    private MessageSource messageSource;
 
     final static Map<String, String> GENRE_ITEMS = 
-        Collections.unmodifiableMap(new LinkedHashMap<String, String>() {
-        {
-            put("ニュース", "NEWS");
-            put("金融"   , "FINANCE");
-            put("スポーツ", "SPORTS");
-            put("音楽"   , "MUSIC");
-            put("暮らし"  , "LIFE");
-        }
-    });
+        Collections.unmodifiableMap(new LinkedHashMap<>() {
+            {
+                put("ニュース", "NEWS");
+                put("金融", "FINANCE");
+                put("スポーツ", "SPORTS");
+                put("音楽", "MUSIC");
+                put("暮らし", "LIFE");
+            }
+        });
 
     final static Map<String, String> ROLE_ITEMS = 
-        Collections.unmodifiableMap(new LinkedHashMap<String, String>() {
-        {
-            put("管理者", "ROLE_ADMIN");
-            put("一般"  , "ROLE_GENERAL");
-        }
-    });
+        Collections.unmodifiableMap(new LinkedHashMap<>() {
+            {
+                put("管理者", "ROLE_ADMIN");
+                put("一般", "ROLE_GENERAL");
+            }
+        });
 
     public AuthController() {
     }
@@ -119,13 +127,9 @@ public class AuthController {
         return "admin";
     }
 
-    private boolean isAdmin(UserDetails userDetails) {
-        return userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
-    }
-
     /** 他人のユーザ情報を参照しようとしていないかチェック（管理者はOK） */
     private boolean checkAccessUser(UserDetails userDetails, String username) {
-        if (!isAdmin(userDetails)) {
+        if (!((LoginUserDetails)userDetails).isAdmin()) {
             if (!userDetails.getUsername().equals(username)) {
                 logger.error(String.format("不正アクセス検出!!! 検出ユーザ:%s, アクセス先ユーザ:%s",
                 userDetails.getUsername(), username));
@@ -144,13 +148,7 @@ public class AuthController {
         Optional<LoginUser> optLoginUser = loginUserDetailsService.findLoginUser(id);
         if (optLoginUser.isEmpty())
             throw new UserNotFoundException(id);
-        LoginUser loginUser = optLoginUser.get();
-        UserForm form = UserForm.builder()
-                .name(loginUser.getName())
-                .gender(loginUser.getGender())
-                .email(loginUser.getEmail())
-                .build();
-        form.setSplitGenre(loginUser.getGenre());
+        UserForm form = modelMapper.map(optLoginUser.get(), UserForm.class);
         model.addAttribute("userForm", form);
         model.addAttribute("genreItems", GENRE_ITEMS);
         return "user/view";
@@ -165,13 +163,7 @@ public class AuthController {
         Optional<LoginUser> optLoginUser = loginUserDetailsService.findLoginUser(id);
         if (optLoginUser.isEmpty())
             throw new UserNotFoundException(id);
-        LoginUser loginUser = optLoginUser.get();
-        UserUpdateForm form = UserUpdateForm.builder()
-                .name(loginUser.getName())
-                .gender(loginUser.getGender())
-                .email(loginUser.getEmail())
-                .build();
-        form.setSplitGenre(loginUser.getGenre());
+        UserUpdateForm form = modelMapper.map(optLoginUser.get(), UserUpdateForm.class);
         model.addAttribute("userUpdateForm", form);
         model.addAttribute("genreItems", GENRE_ITEMS);
         return "user/edit";
@@ -222,7 +214,9 @@ public class AuthController {
             loginUserDetailsService.create(form);
         } catch(Exception e) {
             if (e.getMessage().contains("Duplicate entry")) {
-                FieldError fieldError = new FieldError(result.getObjectName(), "email", "既に登録されているメールアドレスです");
+                FieldError fieldError = new FieldError(result.getObjectName(), "email",
+                        messageSource.getMessage("duplicate.userForm.email", null,
+                                LocaleContextHolder.getLocale()));
                 result.addError(fieldError);
                 return "user/add";
             }
@@ -241,11 +235,7 @@ public class AuthController {
         Optional<LoginUser> optLoginUser = loginUserDetailsService.findLoginUser(id);
         if (optLoginUser.isEmpty())
             throw new UserNotFoundException(id);
-        LoginUser loginUser = optLoginUser.get();
-        UserDeleteForm form = UserDeleteForm.builder()
-                .name(loginUser.getName())
-                .email(loginUser.getEmail())
-                .build();
+        UserDeleteForm form = modelMapper.map(optLoginUser.get(), UserDeleteForm.class);
         model.addAttribute("userDeleteForm", form);
         return "user/delete";
     }
@@ -261,7 +251,7 @@ public class AuthController {
         // ユーザ情報の削除
         loginUserDetailsService.delete(form);
 
-        if (isAdmin(userDetails))
+        if (((LoginUserDetails)userDetails).isAdmin())
             return "redirect:/admin";
         else {
             try {
@@ -277,14 +267,14 @@ public class AuthController {
     // ここから @RestAPI ↓↓
     // ***************************************
     @GetMapping("/api/V1/user/{id}")
-    public ResponseEntity<Object> getUser(@AuthenticationPrincipal UserDetails userDetails, @PathVariable String id) {
+    public ResponseEntity<LoginUserDTO> getUser(@AuthenticationPrincipal UserDetails userDetails, @PathVariable String id) {
         // 他人のユーザ情報を参照しようとしていないかチェック（管理者はOK）
         if (!checkAccessUser(userDetails, id))
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         Optional<LoginUser> optLoginUser = loginUserDetailsService.findLoginUser(id);
-        if (optLoginUser.isEmpty())
-            return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(optLoginUser.get());
+        return optLoginUser.map(loginUser -> ResponseEntity.ok(
+                modelMapper.map(loginUser, LoginUserDTO.class)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -297,7 +287,9 @@ public class AuthController {
             loginUserDetailsService.create(form);
         } catch(Exception e) {
             if (e.getMessage().contains("Duplicate entry")) {
-                FieldError fieldError = new FieldError(result.getObjectName(), "email", "既に登録されているメールアドレスです");
+                FieldError fieldError = new FieldError(result.getObjectName(), "email",
+                        messageSource.getMessage("duplicate.userForm.email", null,
+                                LocaleContextHolder.getLocale()));
                 result.addError(fieldError);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result.getAllErrors());
             }

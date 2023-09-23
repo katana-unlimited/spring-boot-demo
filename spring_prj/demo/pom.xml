@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.1.3</version>
+		<version>3.1.4</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
@@ -104,12 +104,34 @@
 		<dependency>
 			<groupId>org.webjars</groupId>
 			<artifactId>webjars-locator-core</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>io.github.classgraph</groupId>
+					<artifactId>classgraph</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.querydsl</groupId>
 			<artifactId>querydsl-apt</artifactId>
 			<classifier>jakarta</classifier>
 			<version>${querydsl.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>io.github.classgraph</groupId>
+					<artifactId>classgraph</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<!--
+			querydsl-aptが4.8.108
+			webjars-locator-coreが4.8.147
+			コンフリクトを解消するために以下のバージョンを指定
+		 -->
+		 <dependency>
+			<groupId>io.github.classgraph</groupId>
+			<artifactId>classgraph</artifactId>
+			<version>4.8.147</version>
 		</dependency>
 		<dependency>
 			<groupId>com.querydsl</groupId>
@@ -126,6 +148,11 @@
 			<groupId>com.querydsl</groupId>
 			<artifactId>querydsl-sql-spring</artifactId>
 			<version>${querydsl.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.modelmapper.extensions</groupId>
+			<artifactId>modelmapper-spring</artifactId>
+			<version>3.0.0</version>
 		</dependency>
 	</dependencies>
 

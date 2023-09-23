@@ -22,24 +22,24 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor( staticName = "empty" )
 @Data
 public class UserForm implements Serializable {
-    @NotEmpty(message = "名前を入力してください")
-    @Size(max = 128, message = "名前は{max}桁以内で入力してください")
+    @NotEmpty
+    @Size(max = 128)
     private String name;
-    @NotNull(message = "性別を選択してください")
+    @NotNull
     private GenderStatus gender;
-    @NotEmpty(message = "メールアドレスを入力してください")
-    @Size(max = 256, message = "メールアドレスは{max}桁以内で入力してください")
-    @Email(message = "メールアドレスの形式で入力してください")
+    @NotEmpty
+    @Size(max = 256)
+    @Email
     private String email;
-    @NotEmpty(message = "パスワードを入力してください")
-    @Size(max = 16, message = "パスワードは{max}桁以内で入力してください")
+    @NotEmpty
+    @Size(max = 16)
     private String password;
-    @NotEmpty(message = "パスワード（確認用）を入力してください")
-    @Size(max = 16, message = "パスワード（確認用）は{max}桁以内で入力してください")
+    @NotEmpty
+    @Size(max = 16)
     private String passwordConfirmation;
     private String[] genre;
 
-    @AssertTrue(message = "パスワードとパスワード（確認用）は同一にしてください")
+    @AssertTrue(message = "{invalid.userForm.password}")
     public boolean isPasswordValid() {
         if (!StringUtils.hasText(password) && !StringUtils.hasText(passwordConfirmation)) {
             return true;

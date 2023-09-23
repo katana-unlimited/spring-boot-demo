@@ -1,7 +1,6 @@
 package com.example.demo.model;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -32,15 +31,15 @@ public class UserUpdateValidator implements Validator {
         UserUpdateForm form = (UserUpdateForm) target;
         LoginUserDetails userDetails = (LoginUserDetails) SecurityContextHolder.getContext().getAuthentication()
                 .getPrincipal();
-        if (!userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
+        if (!userDetails.isAdmin()) {
             // 入力した現在のパスワードが正しいかチェック（管理者はOK）
             if (StringUtils.hasText(form.getPassword()) && 
                 !passwordEncoder.matches(form.getPassword(), userDetails.getPassword())) {
-                errors.rejectValue("password", "password.invalid", "現在のパスワードが正しくありません");
+                errors.rejectValue("password", "invalid");
             }
             // 新しいパスワードを入力した時は現在のパスワードも入力しているかチェック（管理者はOK）
             if (StringUtils.hasText(form.getNewPassword()) && !StringUtils.hasText(form.getPassword())) {
-                errors.rejectValue("password", "password.empty", "現在のパスワードを入力してください");
+                errors.rejectValue("password", "empty");
             }
         }
     }

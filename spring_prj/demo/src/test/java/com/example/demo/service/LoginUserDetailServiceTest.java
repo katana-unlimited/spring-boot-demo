@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -51,12 +52,17 @@ import com.querydsl.core.types.ConstructorExpression;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.QBean;
+import com.querydsl.core.types.SubQueryExpression;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.PathBuilder;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQueryFactory;
 import com.querydsl.jpa.sql.JPASQLQuery;
 import com.querydsl.sql.MySQLTemplates;
+import com.querydsl.sql.SQLExpressions;
+import com.querydsl.sql.SQLQuery;
 import com.querydsl.sql.SQLQueryFactory;
+import com.querydsl.sql.Union;
 
 import jakarta.persistence.EntityManager;
 
@@ -450,6 +456,61 @@ public class LoginUserDetailServiceTest {
                 }).collect(Collectors.toList());
         logger.debug("users=" + users);
 
+        // union test1
+        SQLQuery<Tuple> query1 = sqlQueryFactory
+                .select(sLoginUser.id, sLoginUser.name,
+                        sRoles.id.min().longValue())
+                .from(sLoginUser)
+                .leftJoin(sUserRole).on(sUserRole.userId.eq(sLoginUser.id))
+                .leftJoin(sRoles).on(sRoles.id.eq(sUserRole.roleId))
+                .where(whereClause2)
+                .groupBy(sLoginUser.id, sLoginUser.name);
+        SQLQuery<Tuple> query2 = sqlQueryFactory
+                .select(sLoginUser.id, sLoginUser.name,
+                        sRoles.id.max().longValue())
+                .from(sLoginUser)
+                .leftJoin(sUserRole).on(sUserRole.userId.eq(sLoginUser.id))
+                .leftJoin(sRoles).on(sRoles.id.eq(sUserRole.roleId))
+                .where(whereClause2)
+                .groupBy(sLoginUser.id, sLoginUser.name);
+        List<Tuple> unionList = sqlQueryFactory.query().unionAll(
+                Arrays.asList(query1, query2)).fetch();
+        logger.info("union SQL: "+unionList.toString());
+
+        // union test2
+        Union<Tuple> union = sqlQueryFactory.query().unionAll(
+                Arrays.asList(query1, query2));
+        unionList = sqlQueryFactory.query().unionAll(
+                Arrays.asList(union, query2)).fetch();
+        logger.info("union SQL2: " + unionList.toString());
+
+        // union test3
+        PathBuilder<Tuple>   unionPath = new PathBuilder<>(Tuple.class  , "t");
+        PathBuilder<Integer> idPath    = new PathBuilder<>(Integer.class, "id");
+        PathBuilder<String>  namePath  = new PathBuilder<>(String.class , "name");
+        PathBuilder<Long>    countPath = new PathBuilder<>(Long.class   , "count");
+        SubQueryExpression<Tuple> query3 = SQLExpressions
+                .select(sLoginUser.id, sLoginUser.name, sRoles.id.min().longValue().as(countPath))
+                .from(sLoginUser)
+                .leftJoin(sUserRole).on(sUserRole.userId.eq(sLoginUser.id))
+                .leftJoin(sRoles).on(sRoles.id.eq(sUserRole.roleId))
+                .where(whereClause2)
+                .groupBy(sLoginUser.id, sLoginUser.name);
+        SubQueryExpression<Tuple> query4 = SQLExpressions
+                .select(sLoginUser.id, sLoginUser.name, sRoles.id.max().longValue().as(countPath))
+                .from(sLoginUser)
+                .leftJoin(sUserRole).on(sUserRole.userId.eq(sLoginUser.id))
+                .leftJoin(sRoles).on(sRoles.id.eq(sUserRole.roleId))
+                .where(whereClause2)
+                .groupBy(sLoginUser.id, sLoginUser.name);
+        Union<Tuple> union2 = SQLExpressions.unionAll(Arrays.asList(query3, query4));
+        SQLQuery<?> query = sqlQueryFactory.query();
+        tupleList = query.select(idPath, namePath, countPath)
+                .from(union2, unionPath)
+                .where(unionPath.get(namePath).eq("管理太郎"))
+                .fetch();
+        logger.info("union SQL3: \n" + query.getSQL().getSQL()+"\n"+tupleList.toString());
+
         // Query in SQL, but project as entity:
         JPASQLQuery<?> jpaSqlQuery = new JPASQLQuery<>(entityManager, MySQLTemplates.builder().build());
         varUsers = jpaSqlQuery.select(sLoginUser.all())
@@ -551,6 +612,7 @@ public class LoginUserDetailServiceTest {
             assertThat(queryDslLoginUser).isEqualTo(jpaLoginUser);
         }
         // QueryDSLでDELETE（関連テーブルuser_roleも削除される）
+        // ※関連テーブルの自動削除は@ManyToMany @JoinTableが指定されている場合のみ
         jpaQueryFactory.delete(qLoginUser)
                 .where(qLoginUser.email.eq(loginUser.getEmail()))
                 .execute();

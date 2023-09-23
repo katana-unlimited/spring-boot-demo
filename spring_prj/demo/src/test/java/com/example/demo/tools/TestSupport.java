@@ -1,5 +1,6 @@
 package com.example.demo.tools;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +30,15 @@ public class TestSupport {
 
     static public LoginUser getGeneralUser() {
         List<Role> roles = new ArrayList<>();
-        roles.add(new Role(1, "ROLE_GENERAL"));
+        Role role = Role.builder()
+            .id(1)
+            .name("ROLE_GENERAL")
+            .createdBy("CREATED_BY")
+            .createdAt(LocalDateTime.now())
+            .updatedBy("UPDATED_BY")
+            .updatedAt(LocalDateTime.now())
+            .build();
+        roles.add(role);
         // @SuppressWarnings("unused")
         LoginUser general = LoginUser.builder()
                 .id(1)
@@ -38,6 +47,10 @@ public class TestSupport {
                 .gender(GenderStatus.MALE)
                 .genre("NEWS")
                 .roleList(roles)
+                .createdBy("CREATED_BY")
+                .createdAt(LocalDateTime.now())
+                .updatedBy("UPDATED_BY")
+                .updatedAt(LocalDateTime.now())
                 .build();
         return general;
     }

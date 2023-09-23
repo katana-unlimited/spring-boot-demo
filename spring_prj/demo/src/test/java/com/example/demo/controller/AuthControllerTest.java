@@ -46,7 +46,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithAnonymousUser;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -54,7 +53,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import com.example.demo.dto.LoginUserDTO;
+import com.example.demo.dto.RoleDTO;
 import com.example.demo.entity.LoginUser;
+import com.example.demo.entity.Role;
 import com.example.demo.exception.UserNotFoundException;
 import com.example.demo.model.UserDeleteForm;
 import com.example.demo.model.UserForm;
@@ -63,6 +65,7 @@ import com.example.demo.model.UserUpdateForm;
 import com.example.demo.service.LoginUserDetails;
 import com.example.demo.service.LoginUserDetailsService;
 import com.example.demo.tools.TestSupport;
+import com.example.demo.utils.DateTimeUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest // 処理が重たくなるがSecurityFilterChainを読み込ませるためしょうがない
@@ -102,6 +105,7 @@ public class AuthControllerTest {
 
     @Before(value="setUp")
     public void setUp() {
+        // System.setProperty("user.language", "ja");
     }
 
     @BeforeEach
@@ -836,7 +840,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "general@example.com", roles = "GENERAL")
+    @WithMockCustomUser(name = "general@example.com", username = "テスター", role = "GENERAL")
     public void testGetUserWithValidUser() throws Exception {
         // Arrange
         LoginUser loginUser = TestSupport.getGeneralUser();
@@ -849,9 +853,24 @@ public class AuthControllerTest {
 
         // Assert
         String content = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
-        LoginUser responseUser = objectMapper.readValue(content, LoginUser.class);
-        assertEquals(loginUser.getEmail(), responseUser.getEmail());
+        LoginUserDTO responseUser = objectMapper.readValue(content, LoginUserDTO.class);
+        assertEquals(loginUser.getId(), responseUser.getId());
         assertEquals(loginUser.getName(), responseUser.getName());
+        assertEquals(loginUser.getEmail(), responseUser.getEmail());
+        assertEquals(loginUser.getGender(), responseUser.getGender());
+        assertEquals(loginUser.getGenre().get(), responseUser.getGenre());
+        assertEquals(loginUser.getCreatedBy(), responseUser.getCreatedBy());
+        assertEquals(DateTimeUtils.formatDateTime(loginUser.getCreatedAt()), responseUser.getCreatedAt());
+        assertEquals(loginUser.getUpdatedBy(), responseUser.getUpdatedBy());
+        assertEquals(DateTimeUtils.formatDateTime(loginUser.getUpdatedAt()), responseUser.getUpdatedAt());
+        Role role = loginUser.getRoleList().get(0);
+        RoleDTO roleDTO = responseUser.getRoleList().get(0);
+        assertEquals(role.getId(), roleDTO.getId());
+        assertEquals(role.getName(), roleDTO.getName());
+        assertEquals(role.getCreatedBy(), roleDTO.getCreatedBy());
+        assertEquals(DateTimeUtils.formatDateTime(role.getCreatedAt()), roleDTO.getCreatedAt());
+        assertEquals(role.getUpdatedBy(), roleDTO.getUpdatedBy());
+        assertEquals(DateTimeUtils.formatDateTime(role.getUpdatedAt()), roleDTO.getUpdatedAt());
     }
 
     @Test

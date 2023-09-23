@@ -6,10 +6,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import com.example.demo.entity.LoginUser_;
-import com.example.demo.entity.Role_;
 import com.example.demo.entity.LoginUser;
+import com.example.demo.entity.LoginUser_;
 import com.example.demo.entity.Role;
+import com.example.demo.entity.Role_;
 
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.ListJoin;
@@ -18,6 +18,20 @@ import jakarta.persistence.criteria.Subquery;
 
 @Component
 public class LoginUserSpecification {
+
+    static public Specification<LoginUser> join() {
+        return (root, query, cb) -> {
+            // ページング処理と組み合わせると、カウント用SQLで関連テーブルを使用していないエラーが出るので
+            // 戻り値の型が Long.class 以外の場合に結合するようにした。
+            // https://hepokon365.hatenablog.com/entry/2021/12/31/160502
+            // https://stackoverflow.com/questions/29348742/spring-data-jpa-creating-specification-query-fetch-joins
+            // ここでは Long.class 以外に long.class とも比較しているが、 Long.class だけで動いている。
+            if (Long.class != query.getResultType()) {
+                root.fetch(LoginUser_.roleList, JoinType.LEFT);
+            }
+            return null;
+        };
+    }
 
     static public Specification<LoginUser> equalsID(Integer id) {
         return id == 0 ? null

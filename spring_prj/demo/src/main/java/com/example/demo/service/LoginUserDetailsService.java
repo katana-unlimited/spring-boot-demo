@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -16,7 +17,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -25,13 +25,13 @@ import com.example.demo.entity.LoginUser;
 import com.example.demo.entity.QLoginUser;
 import com.example.demo.entity.QRole;
 import com.example.demo.entity.Role;
-import com.example.demo.repository.JdbcLoginUserRepository;
-import com.example.demo.repository.LoginUserRepository;
-import com.example.demo.repository.RoleRepository;
 import com.example.demo.model.UserDeleteForm;
 import com.example.demo.model.UserForm;
 import com.example.demo.model.UserSearchForm;
 import com.example.demo.model.UserUpdateForm;
+import com.example.demo.repository.JdbcLoginUserRepository;
+import com.example.demo.repository.LoginUserRepository;
+import com.example.demo.repository.RoleRepository;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.EntityPathBase;
@@ -43,23 +43,24 @@ import com.querydsl.jpa.JPQLQueryFactory;
 public class LoginUserDetailsService implements UserDetailsService {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-	private PasswordEncoder     passwordEncoder;
-    private LoginUserRepository loginUserRepository;
-    private RoleRepository      roleRepository;
-    private JdbcLoginUserRepository jdbcLoginUserRepository;
-    private JPQLQueryFactory jpaQueryFactory;
+    private final LoginUserRepository loginUserRepository;
+    private final RoleRepository      roleRepository;
+    private final JdbcLoginUserRepository jdbcLoginUserRepository;
+    private final JPQLQueryFactory jpaQueryFactory;
+    private final ModelMapper modelMapper;
 
-    public LoginUserDetailsService(PasswordEncoder passwordEncoder,
+    public LoginUserDetailsService(
             LoginUserRepository loginUserRepository,
             RoleRepository roleRepository,
             LoginUserSpecification loginUserSpecification,
             JdbcLoginUserRepository jdbcLoginUserRepository,
-            JPQLQueryFactory jpaQueryFactory) {
-        this.passwordEncoder = passwordEncoder;
+            JPQLQueryFactory jpaQueryFactory,
+            ModelMapper modelMapper) {
         this.loginUserRepository = loginUserRepository;
         this.roleRepository = roleRepository;
         this.jdbcLoginUserRepository = jdbcLoginUserRepository;
         this.jpaQueryFactory = jpaQueryFactory;
+        this.modelMapper = modelMapper;
     }
 
     @Override
@@ -149,7 +150,8 @@ public class LoginUserDetailsService implements UserDetailsService {
     Page<LoginUser> getAccountsByJPASpecification(PageRequest pageRequest, UserSearchForm form) {
         int id = StringUtils.hasText(form.getId()) ? Integer.parseInt(form.getId()) : 0;
         return loginUserRepository.findAll(
-                Specification.where(LoginUserSpecification.equalsID(id))
+                Specification.where(LoginUserSpecification.join())
+                .and(LoginUserSpecification.equalsID(id))
                 // .and(Specification.where(LoginUserSpecification.containsName(form.getName()))
                 //      .or(LoginUserSpecification.containsEmail(form.getEmail())))
                 .and(LoginUserSpecification.containsName(form.getName()))
@@ -169,7 +171,7 @@ public class LoginUserDetailsService implements UserDetailsService {
         return jdbcLoginUserRepository.findAll(pageRequest, form);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Page<LoginUser> getAccounts(Pageable pageable, UserSearchForm form) {
         PageRequest     pageRequest  = buildPageRequest(pageable, form.getSortBy());
         Page<LoginUser> accountPage  = getAccountsByQueryDSL(pageRequest, form);
@@ -193,27 +195,18 @@ public class LoginUserDetailsService implements UserDetailsService {
         if (optLoginUser.isEmpty())
             throw new UsernameNotFoundException("User not found: " + form.getEmail());
         LoginUser loginUser = optLoginUser.get();
-        loginUser.setName(form.getName());
-        loginUser.setGender(form.getGender());
-        loginUser.setGenre(form.getGenreString());
-        if (StringUtils.hasText(form.getNewPassword()))
-            loginUser.setPassword(passwordEncoder.encode(form.getNewPassword()));
+        modelMapper.map(form, loginUser);
         loginUserRepository.save(loginUser);
     }
 
     @Transactional
     public void create(UserForm form) {
-        Optional<Role> optRole = roleRepository.findOptionalByName("ROLE_GENERAL");
+        LoginUser loginUser = modelMapper.map(form, LoginUser.class);
         List<Role> roleList = new ArrayList<>();
-        roleList.add(optRole.get());
-        LoginUser loginUser = LoginUser.builder()
-                .name(form.getName())
-                .email(form.getEmail())
-                .password(passwordEncoder.encode(form.getPassword()))
-                .gender(form.getGender())
-                .genre(form.getGenreString())
-                .roleList(roleList)
-                .build();
+        Optional<Role> optRole = roleRepository.findOptionalByName("ROLE_GENERAL");
+        if (optRole.isPresent())
+            roleList.add(optRole.get());
+        loginUser.setRoleList(roleList);
         loginUserRepository.save(loginUser);
     }
 

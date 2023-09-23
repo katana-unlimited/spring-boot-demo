@@ -6,6 +6,17 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" />
     <link rel="stylesheet" href="../static/css/style.css" th:href="@{/css/style.css}">
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <script>
+        $(function() {
+            $('#clearSearch').on('click', function() {
+                $('#name').val('');
+                $('#email').val('');
+                $('select[name="roles"] option:selected').prop('selected', false);
+            });
+        });
+    </script>
 </head>
 <body>
     <h1>管理者ページ</h1>
@@ -51,7 +62,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>ロール</td>
+                        <td>権限</td>
                         <td>
                             <div class="form-group">
                                 <select class="form-control" name="roles" multiple="multiple" size="3">
@@ -66,7 +77,8 @@
             </table>
             <br />
             <div class="text-center">
-              <input type="submit" value="　検索　" class="btn btn-primary">
+              <input type="submit" value="　検索　" class="btn btn-primary"/>
+              <button type="button" id="clearSearch">入力をクリア</button>
             </div>
         </div>
         </form>

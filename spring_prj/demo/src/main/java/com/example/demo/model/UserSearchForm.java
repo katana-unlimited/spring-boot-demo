@@ -8,12 +8,12 @@ import lombok.Data;
 
 @Data
 public class UserSearchForm implements Serializable {
-    @Size(max = 10, message = "IDは{max}桁以内で入力してください")
-    @Pattern(regexp = "\\d*", message = "数値を入力してください")
+    @Size(max = 10)
+    @Pattern(regexp = "\\d*")
     private String id;
-    @Size(max = 128, message = "名前は{max}桁以内で入力してください")
+    @Size(max = 128)
     private String name;
-    @Size(max = 256, message = "メールアドレスは{max}桁以内で入力してください")
+    @Size(max = 256)
     private String email;
     private String sortBy = "+id";
     private String[] roles;

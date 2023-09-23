@@ -17,7 +17,6 @@ public interface LoginUserRepository extends JpaRepository<LoginUser, String>,
     @EntityGraph(attributePaths = { "roleList" })
     public Optional<LoginUser> findOptionalByEmail(String email);
 
-    @EntityGraph(attributePaths = {"roleList"})
     Page<LoginUser> findAll(Specification<LoginUser> spec, Pageable pageable);
 
     /**
@@ -29,7 +28,7 @@ public interface LoginUserRepository extends JpaRepository<LoginUser, String>,
         Specification<LoginUser> distinctSpec = Specification.where(spec).and(
                 (root, query, criteriaBuilder) -> {
                     query.distinct(true);
-                    return criteriaBuilder.conjunction(); // 無害だが「1 = 1」が条件に追加される
+                    return criteriaBuilder.conjunction(); // 無害だが「1 = 1」が条件に追加される（試してないけどnullで返せば良さそう）
                 });
         return findAll(distinctSpec, pageable);
     }

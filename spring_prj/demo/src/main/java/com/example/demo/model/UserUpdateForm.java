@@ -20,24 +20,24 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor( staticName = "empty" )
 @Data
 public class UserUpdateForm implements Serializable {
-    @NotEmpty(message = "名前を入力してください")
-    @Size(max = 128, message = "名前は{max}桁以内で入力してください")
+    @NotEmpty
+    @Size(max = 128)
     private String name;
-    @NotNull(message = "性別を選択してください")
+    @NotNull
     private GenderStatus gender;
-    @NotEmpty(message = "メールアドレスを入力してください")
-    @Size(max = 256, message = "メールアドレスは{max}桁以内で入力してください")
-    @Email(message = "メールアドレスの形式で入力してください")
+    @NotEmpty
+    @Size(max = 256)
+    @Email
     private String email;
-    @Size(max = 16, message = "現在のパスワードは{max}桁以内で入力してください")
+    @Size(max = 16)
     private String password;
-    @Size(max = 16, message = "新パスワードは{max}桁以内で入力してください")
+    @Size(max = 16)
     private String newPassword;
-    @Size(max = 16, message = "新パスワード（確認用）は{max}桁以内で入力してください")
+    @Size(max = 16)
     private String passwordConfirmation;
     private String[] genre;
 
-    @AssertTrue(message = "新パスワードと新パスワード（確認用）は同一にしてください")
+    @AssertTrue(message = "{invalid.userUpdateForm.newPassword}")
     public boolean isNewPasswordValid() {
         if (!StringUtils.hasText(newPassword) && !StringUtils.hasText(passwordConfirmation)) {
             return true;

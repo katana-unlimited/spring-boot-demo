@@ -16,10 +16,10 @@ import lombok.NoArgsConstructor;
 @Data
 public class UserDeleteForm implements Serializable {
     private String name;
-    @NotEmpty(message = "メールアドレスを入力してください")
-    @Size(max = 256, message = "メールアドレスは{max}桁以内で入力してください")
-    @Email(message = "メールアドレスの形式で入力してください")
+    @NotEmpty
+    @Size(max = 256)
+    @Email
     private String email;
-    @Size(max = 16, message = "パスワードは{max}桁以内で入力してください")
+    @Size(max = 16)
     private String passwordConfirmation;
 }
